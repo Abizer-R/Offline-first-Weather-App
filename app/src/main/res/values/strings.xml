@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Weather App</string>
+
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="temperature_with_symbol">%1$s\u2103</string>
+    <string name="pressure_with_symbol">%1$d hpa</string>
+    <string name="humidity_with_symbol">%1$d%%</string>
+    <string name="windspeed_with_symbol">%1$s kmph</string>
+
+    <string name="error_text">Uh-oh an error occurred</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="location_permission_denied">Please provide location permission</string>
+    <string name="need_location_permission_to_fetch">We need location permission to fetch your current location</string>
+    <string name="location_might_not_be_exact">Your current location might not be exact</string>
+    <string name="could_not_fetch_current_location">Could not fetch current location</string>
+    <string name="please_enable_gps">Please enable gps</string>
 </resources>
