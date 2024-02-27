@@ -77,6 +77,8 @@ dependencies {
     implementation("com.intuit.sdp:sdp-android:1.1.0")
     implementation("com.intuit.ssp:ssp-android:1.1.0")
 
+    // shimmer layout
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
 }
 
 // Allow references to generated code

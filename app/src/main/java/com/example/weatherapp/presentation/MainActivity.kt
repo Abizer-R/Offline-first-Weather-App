@@ -11,6 +11,9 @@ import com.example.weatherapp.domain.weather.model.WeatherData
 import com.example.weatherapp.presentation.ui.weather.WeatherViewModel
 import com.example.weatherapp.utils.ResultData
 import com.example.weatherapp.utils.WeatherDetailsUtil
+import com.example.weatherapp.utils.hide
+import com.example.weatherapp.utils.invisible
+import com.example.weatherapp.utils.show
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.format.DateTimeFormatter
 
@@ -27,34 +30,74 @@ class MainActivity : AppCompatActivity() {
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
+        initUserInterface()
+        addObservers()
         weatherViewModel.fetchWeatherInfo(
             latitude = 22.719568,
             longitude = 75.857727
         )
+    }
 
+    private fun initUserInterface() {
+        with (viewBinding.cvWeatherDetails) {
+            btnRefresh.setOnClickListener {
+                weatherViewModel.fetchWeatherInfo(
+                    latitude = 22.719568,
+                    longitude = 75.857727
+                )
+            }
+        }
+    }
+
+    private fun addObservers() {
         weatherViewModel.weatherDataLiveData.observe(this) {
             when (it) {
                 is ResultData.Loading -> {
-                    // TODO
+                    updateRefreshing(isRefreshing = true)
                 }
 
                 is ResultData.Success -> {
+                    updateRefreshing(isRefreshing = false)
                     updateWeatherDetails(it.data)
                 }
 
                 is ResultData.Failed -> {
-                    Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    updateRefreshing(isRefreshing = false)
+                    viewBinding.cvWeatherDetails.shimmerInvisibleGroup.invisible()
+                    viewBinding.cvWeatherDetails.tvError.show()
                 }
             }
         }
     }
 
+    private fun updateRefreshing(isRefreshing: Boolean) {
+        viewBinding.cvWeatherDetails.tvError.hide()
+        if (isRefreshing) {
+            viewBinding.shimmerLayout.show()
+            viewBinding.shimmerLayout.startShimmer()
+            viewBinding.cvWeatherDetails.apply {
+                shimmerInvisibleGroup.invisible()
+                progressBar.show()
+                btnRefresh.invisible()
+            }
+
+        } else {
+            viewBinding.shimmerLayout.hide()
+            viewBinding.shimmerLayout.stopShimmer()
+            viewBinding.cvWeatherDetails.apply {
+                shimmerInvisibleGroup.show()
+                progressBar.hide()
+                btnRefresh.show()
+            }
+
+        }
+    }
+
     private fun updateWeatherDetails(data: WeatherData) {
-        with(viewBinding) {
+        with(viewBinding.cvWeatherDetails) {
             tvUpdatedOn.text = WeatherDetailsUtil.getRelativeDateTimeString(data.time, resources)
             tvLocation.text = "${data.name}, ${data.country}"
             tvDescription.text = data.desc
-            // limit decimal to 1 digit and use string resource
             tvTemp.text = getString(R.string.temperature_with_symbol, getOneDigitDecimal(data.temperatureCelsius))
             tvPressure.text = getString(R.string.pressure_with_symbol, data.pressure.toInt())
             tvHumidity.text = getString(R.string.humidity_with_symbol, data.humidity.toInt())
