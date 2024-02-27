@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Weather App</string>
+
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="temperature_with_symbol">%1$s\u2103</string>
+    <string name="pressure_with_symbol">%1$d hpa</string>
+    <string name="humidity_with_symbol">%1$d%%</string>
+    <string name="windspeed_with_symbol">%1$s kmph</string>
 </resources>
