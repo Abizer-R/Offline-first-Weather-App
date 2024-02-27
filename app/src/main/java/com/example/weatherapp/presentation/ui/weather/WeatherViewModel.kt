@@ -1,5 +1,6 @@
 package com.example.weatherapp.presentation.ui.weather
 
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -19,18 +20,17 @@ class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
-    private val _weatherDataLiveData = MutableLiveData<ResultData<WeatherData>>()
+    private val _weatherDataLiveData = MutableLiveData<ResultData<WeatherData>>(ResultData.Loading())
     val weatherDataLiveData: LiveData<ResultData<WeatherData>>
         get() = _weatherDataLiveData
 
     fun fetchWeatherInfo(
-        latitude: Double,
-        longitude: Double
+        location: Location
     ) {
         viewModelScope.launch {
             weatherRepository.getCurrentWeatherData(
-                lat = latitude,
-                lon = longitude
+                lat = location.latitude,
+                lon = location.longitude
             ).onEach {
                 Log.e("TESTING", "fetchWeatherInfo: result = $it")
                 _weatherDataLiveData.postValue(it)

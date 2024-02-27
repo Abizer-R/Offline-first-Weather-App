@@ -200,7 +200,7 @@
             app:drawableTint="@color/error_color"
             android:text="@string/error_text"
             android:textColor="@color/error_color"
-            android:textSize="@dimen/_14ssp"
+            android:textSize="@dimen/_16ssp"
             android:gravity="center"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>

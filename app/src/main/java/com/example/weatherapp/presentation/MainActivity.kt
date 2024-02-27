@@ -1,10 +1,16 @@
 package com.example.weatherapp.presentation
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.weatherapp.R
 import com.example.weatherapp.databinding.ActivityMainBinding
 import com.example.weatherapp.domain.weather.model.WeatherData
@@ -14,8 +20,13 @@ import com.example.weatherapp.utils.WeatherDetailsUtil
 import com.example.weatherapp.utils.hide
 import com.example.weatherapp.utils.invisible
 import com.example.weatherapp.utils.show
+import com.example.weatherapp.utils.toast
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.AndroidEntryPoint
-import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -25,6 +36,8 @@ class MainActivity : AppCompatActivity() {
 
     private val weatherViewModel: WeatherViewModel by viewModels()
 
+    private var fusedLocationClient: FusedLocationProviderClient? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
@@ -32,19 +45,13 @@ class MainActivity : AppCompatActivity() {
 
         initUserInterface()
         addObservers()
-        weatherViewModel.fetchWeatherInfo(
-            latitude = 22.719568,
-            longitude = 75.857727
-        )
+        fetchLocationDetails()
     }
 
     private fun initUserInterface() {
-        with (viewBinding.cvWeatherDetails) {
+        with(viewBinding.cvWeatherDetails) {
             btnRefresh.setOnClickListener {
-                weatherViewModel.fetchWeatherInfo(
-                    latitude = 22.719568,
-                    longitude = 75.857727
-                )
+                fetchLocationDetails()
             }
         }
     }
@@ -62,9 +69,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is ResultData.Failed -> {
-                    updateRefreshing(isRefreshing = false)
-                    viewBinding.cvWeatherDetails.shimmerInvisibleGroup.invisible()
-                    viewBinding.cvWeatherDetails.tvError.show()
+                    showErrorLayout(
+                        errorText = getString(R.string.error_text)
+                    )
                 }
             }
         }
@@ -93,15 +100,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showErrorLayout(errorText: String) {
+        updateRefreshing(isRefreshing = false)
+        viewBinding.cvWeatherDetails.shimmerInvisibleGroup.invisible()
+        viewBinding.cvWeatherDetails.tvError.show()
+        viewBinding.cvWeatherDetails.tvError.text = errorText
+    }
+
     private fun updateWeatherDetails(data: WeatherData) {
         with(viewBinding.cvWeatherDetails) {
             tvUpdatedOn.text = WeatherDetailsUtil.getRelativeDateTimeString(data.time, resources)
             tvLocation.text = "${data.name}, ${data.country}"
             tvDescription.text = data.desc
-            tvTemp.text = getString(R.string.temperature_with_symbol, getOneDigitDecimal(data.temperatureCelsius))
+            tvTemp.text = getString(
+                R.string.temperature_with_symbol,
+                getOneDigitDecimal(data.temperatureCelsius)
+            )
             tvPressure.text = getString(R.string.pressure_with_symbol, data.pressure.toInt())
             tvHumidity.text = getString(R.string.humidity_with_symbol, data.humidity.toInt())
-            tvWindSpeed.text = getString(R.string.windspeed_with_symbol, getOneDigitDecimal(data.windSpeed))
+            tvWindSpeed.text =
+                getString(R.string.windspeed_with_symbol, getOneDigitDecimal(data.windSpeed))
 
             val iconDrawable =
                 WeatherDetailsUtil.getWeatherIconDrawable(data.iconCode, this@MainActivity)
@@ -116,9 +134,104 @@ class MainActivity : AppCompatActivity() {
         return String.format("%.1f", number)
     }
 
+    private fun fetchLocationDetails() {
+        updateRefreshing(isRefreshing = true)
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        )
+    }
+
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        var isCoarseGranted = false
+        var isFineGranted = false
+        permissions.forEach {
+            when (it.key) {
+                Manifest.permission.ACCESS_COARSE_LOCATION -> {
+                    isCoarseGranted = it.value
+                }
+
+                Manifest.permission.ACCESS_FINE_LOCATION -> {
+                    isFineGranted = it.value
+                }
+            }
+        }
+
+        if (isCoarseGranted.not()) {
+            showErrorLayout(getString(R.string.location_permission_denied))
+            this.toast(getString(R.string.need_location_permission_to_fetch))
+            return@registerForActivityResult
+        }
+
+        if (isFineGranted.not()) {
+            this.toast(getString(R.string.location_might_not_be_exact))
+        }
+        getLocationIfGpsEnabled()
+    }
+
+    private fun getLocationIfGpsEnabled() {
+
+        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val isGpsEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        if (isGpsEnabled.not()) {
+            showErrorLayout(getString(R.string.please_enable_gps))
+            return
+        }
+        getLocation()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getLocation() {
+        if (fusedLocationClient == null) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        }
+
+        lifecycleScope.launch {
+            // Fetch last location cuz it is faster
+            fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
+                location?.let {
+                    weatherViewModel.fetchWeatherInfo(location)
+                }
+            }
+        }
+
+        val usePrecision = ContextCompat.checkSelfPermission(
+            this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        lifecycleScope.launch {
+            // Fetch the current location
+            val priority = if (usePrecision) {
+                Priority.PRIORITY_HIGH_ACCURACY
+            } else {
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY
+            }
+            fusedLocationClient?.getCurrentLocation(
+                priority,
+                CancellationTokenSource().token
+            )?.addOnSuccessListener { location ->
+                location?.let {
+                    weatherViewModel.fetchWeatherInfo(location)
+                }
+            }?.addOnFailureListener {
+                it.printStackTrace()
+                this@MainActivity.toast(getString(R.string.could_not_fetch_current_location))
+            }
+        }
+
+    }
+
 
     override fun onDestroy() {
         _binding = null
+        fusedLocationClient = null
         super.onDestroy()
     }
 }
