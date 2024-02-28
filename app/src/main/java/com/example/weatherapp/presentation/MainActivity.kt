@@ -12,9 +12,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.weatherapp.R
 import com.example.weatherapp.databinding.ActivityMainBinding
 import com.example.weatherapp.domain.weather.model.WeatherData
+import com.example.weatherapp.presentation.ui.weather.WeatherAdapter
 import com.example.weatherapp.presentation.ui.weather.WeatherViewModel
 import com.example.weatherapp.utils.ResultData
 import com.example.weatherapp.utils.AppUtils
@@ -39,6 +41,10 @@ class MainActivity : AppCompatActivity() {
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
 
+    private val weatherAdapter: WeatherAdapter by lazy {
+        WeatherAdapter()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
@@ -47,14 +53,24 @@ class MainActivity : AppCompatActivity() {
         initUserInterface()
         addObservers()
 
-        fetchLocationDetailsFromRemote(failToast = false)
+        fetchLocationDetailsFromRemote(failToast = true)
 
     }
 
     private fun initUserInterface() {
         weatherViewModel.startObservingDB()
-        with(viewBinding.cvWeatherDetails) {
+        with (viewBinding) {
+
+            rvWeatherDetails.layoutManager = LinearLayoutManager(
+                this@MainActivity, LinearLayoutManager.VERTICAL, false
+            )
+            rvWeatherDetails.adapter = weatherAdapter
+
             btnRefresh.setOnClickListener {
+                fetchLocationDetailsFromRemote(failToast = true)
+            }
+
+            swipeRefreshLayout.setOnRefreshListener {
                 fetchLocationDetailsFromRemote(failToast = true)
             }
         }
@@ -72,9 +88,8 @@ class MainActivity : AppCompatActivity() {
                 is ResultData.Success -> {
                     updateRefreshing(isRefreshing = false)
                     if (weatherViewModel.weatherData.isNotEmpty()) {
-                        weatherViewModel.weatherData[0]?.let { data ->
-                            updateWeatherDetails(data)
-                        }
+                        weatherAdapter.submitList(weatherViewModel.weatherData)
+                        weatherAdapter.notifyDataSetChanged()
                     } else {
                         fetchLocationDetailsFromRemote(failToast = false, errorLayout = true)
                     }
@@ -90,61 +105,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateRefreshing(isRefreshing: Boolean) {
-        viewBinding.cvWeatherDetails.tvError.hide()
+        viewBinding.errorLayout.hide()
         if (isRefreshing) {
             viewBinding.shimmerLayout.show()
             viewBinding.shimmerLayout.startShimmer()
-            viewBinding.cvWeatherDetails.apply {
-                shimmerInvisibleGroup.invisible()
-                progressBar.show()
-                btnRefresh.invisible()
-            }
+
 
         } else {
             viewBinding.shimmerLayout.hide()
             viewBinding.shimmerLayout.stopShimmer()
-            viewBinding.cvWeatherDetails.apply {
-                shimmerInvisibleGroup.show()
-                progressBar.hide()
-                btnRefresh.show()
-            }
-
+            viewBinding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
     private fun showErrorLayout(errorText: String) {
         updateRefreshing(isRefreshing = false)
-        viewBinding.cvWeatherDetails.shimmerInvisibleGroup.invisible()
-        viewBinding.cvWeatherDetails.tvError.show()
-        viewBinding.cvWeatherDetails.tvError.text = errorText
-    }
-
-    private fun updateWeatherDetails(data: WeatherData) {
-        with(viewBinding.cvWeatherDetails) {
-            tvUpdatedOn.text = AppUtils.getRelativeDateTimeString(data.time, resources)
-            val locationDetails = data.locationDetails
-            tvLocation.text = "${locationDetails.name}, ${locationDetails.country}"
-            tvDescription.text = data.desc
-            tvTemp.text = getString(
-                R.string.temperature_with_symbol,
-                getOneDigitDecimal(data.temperatureCelsius)
-            )
-            tvPressure.text = getString(R.string.pressure_with_symbol, data.pressure.toInt())
-            tvHumidity.text = getString(R.string.humidity_with_symbol, data.humidity.toInt())
-            tvWindSpeed.text =
-                getString(R.string.windspeed_with_symbol, getOneDigitDecimal(data.windSpeed))
-
-            val iconDrawable =
-                AppUtils.getWeatherIconDrawable(data.iconCode, this@MainActivity)
-                    ?: ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_01d)
-            ivWeather.setImageDrawable(iconDrawable)
-        }
-    }
-
-    private fun getOneDigitDecimal(
-        number: Double
-    ): String {
-        return String.format("%.1f", number)
+        viewBinding.rvWeatherDetails.hide()
+        viewBinding.errorLayout.show()
+        viewBinding.tvError.text = errorText
     }
 
     private fun fetchLocationDetailsFromRemote(
@@ -160,6 +138,7 @@ class MainActivity : AppCompatActivity() {
                     errorText = getString(R.string.check_internet_connection)
                 )
             }
+            updateRefreshing(isRefreshing = false)
             return
         }
 

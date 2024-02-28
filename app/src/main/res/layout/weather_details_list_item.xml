@@ -2,7 +2,8 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/_16sdp"
+    android:layout_marginTop="@dimen/_16sdp"
+    android:layout_marginHorizontal="@dimen/_16sdp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     app:cardBackgroundColor="@color/primaryColor"
@@ -18,21 +19,43 @@
         android:layout_marginHorizontal="@dimen/_16sdp"
         android:layout_marginTop="@dimen/_16sdp">
 
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/shimmerInvisibleGroup"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:constraint_referenced_ids="llEnv, ll1, ivWeather, tvTemp, viewDivider" />
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:id="@+id/llCurrentLocation"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/ivCurrentLocation"
+                android:layout_width="@dimen/_12sdp"
+                android:layout_height="@dimen/_12sdp"
+                app:srcCompat="@drawable/baseline_my_location_24"
+                app:tint="@color/icon_color"
+                android:layout_gravity="center_vertical"/>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/tvCurrentLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/your_location"
+                android:layout_marginStart="@dimen/_4sdp"
+                android:layout_gravity="center_vertical"/>
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/ll1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="@dimen/_8sdp"
             app:layout_constraintEnd_toStartOf="@+id/ivWeather"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/llCurrentLocation">
 
 
             <androidx.appcompat.widget.AppCompatTextView
@@ -51,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_gray"
-                android:textSize="@dimen/_12ssp"
+                android:textSize="@dimen/_14ssp"
                 tools:text="Scattered Clouds" />
 
 
@@ -104,8 +127,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:layout_marginBottom="@dimen/_24sdp"
             android:orientation="horizontal"
-            app:layout_constraintTop_toBottomOf="@id/viewDivider">
+            app:layout_constraintTop_toBottomOf="@id/viewDivider"
+            app:layout_constraintBottom_toBottomOf="parent">
 
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/llPressure"
@@ -189,52 +214,6 @@
             </androidx.appcompat.widget.LinearLayoutCompat>
 
         </androidx.appcompat.widget.LinearLayoutCompat>
-
-
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/tvError"
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:drawableTop="@drawable/baseline_error_24"
-            app:drawableTint="@color/error_color"
-            android:text="@string/error_text"
-            android:textColor="@color/error_color"
-            android:textSize="@dimen/_16ssp"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRefresh"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="@dimen/_4sdp"
-            android:paddingHorizontal="@dimen/_16sdp"
-            android:paddingVertical="@dimen/_4sdp"
-            app:backgroundTint="@color/backgroundColor"
-            android:text="Refresh"
-            android:textColor="@color/text_color"
-            android:textSize="@dimen/_9ssp"
-            app:icon="@drawable/baseline_refresh_24"
-            app:iconTint="@color/icon_color"
-            app:iconSize="@dimen/_10sdp"
-            android:layout_marginTop="@dimen/_16sdp"
-            android:layout_marginBottom="@dimen/_8sdp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/llEnv"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="@dimen/_16sdp"
-            android:layout_height="@dimen/_16sdp"
-            android:visibility="gone"
-            app:layout_constraintTop_toTopOf="@id/btnRefresh"
-            app:layout_constraintBottom_toBottomOf="@id/btnRefresh"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

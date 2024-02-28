@@ -31,6 +31,7 @@ fun CurrentWeatherDto.toWeatherDataMap() : WeatherData {
 
 fun CurrentWeatherDB.toWeatherDataMap() : WeatherData {
     return WeatherData(
+        isCurrentLocation = isCurrentLocation,
         time = LocalDateTime.ofInstant(
             Instant.ofEpochMilli(timestamp),
             TimeZone.getDefault().toZoneId()
@@ -67,7 +68,8 @@ fun CurrentWeatherDto.toCurrentWeatherDB() : CurrentWeatherDB {
 }
 
 fun WeatherData.toCurrentWeatherDB(
-    id: Int? = null
+    id: Int? = null,
+    isCurrentLocation: Boolean? = null
 ) : CurrentWeatherDB {
     var obj = CurrentWeatherDB(
         timestamp = time.atZone(ZoneId.systemDefault())
@@ -86,6 +88,11 @@ fun WeatherData.toCurrentWeatherDB(
     id?.let {
         obj = obj.copy(
             id = it
+        )
+    }
+    isCurrentLocation?.let {
+        obj = obj.copy(
+            isCurrentLocation = isCurrentLocation
         )
     }
     return obj

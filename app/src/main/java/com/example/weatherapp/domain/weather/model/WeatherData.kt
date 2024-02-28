@@ -3,6 +3,7 @@ package com.example.weatherapp.domain.weather.model
 import java.time.LocalDateTime
 
 data class WeatherData(
+    val isCurrentLocation: Boolean = false,
     val time: LocalDateTime,
     val temperatureCelsius: Double,
     val desc: String,

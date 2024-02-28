@@ -22,18 +22,14 @@ class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
-    private var _weatherData = mutableListOf<WeatherData?>()
-    val weatherData: List<WeatherData?> get() = _weatherData
+    private var _weatherData = mutableListOf<WeatherData>()
+    val weatherData: List<WeatherData> get() = _weatherData
 
-    private val _weatherDataLiveData = MutableLiveData<ResultData<Boolean>>()
+    private val _weatherDataLiveData = MutableLiveData<ResultData<Boolean>>(ResultData.Loading())
     val weatherDataLiveData: LiveData<ResultData<Boolean>>
         get() = _weatherDataLiveData
 
     init {
-        val citiesCount = Constant.citiesList.size + 1
-        for (i in 0 until citiesCount) {
-            _weatherData.add(null)
-        }
         viewModelScope.launch {
             weatherRepository.getWeatherDataFromDB().onEach { weatherList ->
                 Log.e("TESTING", "VM - getWeatherDataFromDB: data = $weatherList", )
@@ -67,7 +63,10 @@ class WeatherViewModel @Inject constructor(
                 when (it) {
                     is ResultData.Success -> {
                         weatherRepository.insertWeatherDataInDB(
-                            it.data.toCurrentWeatherDB(id = position)
+                            it.data.toCurrentWeatherDB(
+                                id = position,
+                                isCurrentLocation = position == 0
+                            )
                         )
                     }
                     is ResultData.Loading -> {
