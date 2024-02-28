@@ -72,7 +72,9 @@ class MainActivity : AppCompatActivity() {
                 is ResultData.Success -> {
                     updateRefreshing(isRefreshing = false)
                     if (weatherViewModel.weatherData.isNotEmpty()) {
-                        updateWeatherDetails(weatherViewModel.weatherData[0])
+                        weatherViewModel.weatherData[0]?.let { data ->
+                            updateWeatherDetails(data)
+                        }
                     } else {
                         fetchLocationDetailsFromRemote(failToast = false, errorLayout = true)
                     }
@@ -120,7 +122,8 @@ class MainActivity : AppCompatActivity() {
     private fun updateWeatherDetails(data: WeatherData) {
         with(viewBinding.cvWeatherDetails) {
             tvUpdatedOn.text = AppUtils.getRelativeDateTimeString(data.time, resources)
-            tvLocation.text = "${data.name}, ${data.country}"
+            val locationDetails = data.locationDetails
+            tvLocation.text = "${locationDetails.name}, ${locationDetails.country}"
             tvDescription.text = data.desc
             tvTemp.text = getString(
                 R.string.temperature_with_symbol,
@@ -253,7 +256,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchWeatherInfo(location: Location, position: Int) {
-        weatherViewModel.fetchWeatherInfo(location, position)
+        weatherViewModel.fetchWeatherInfo(
+            location.latitude,
+            location.longitude,
+            position
+        )
     }
 
 

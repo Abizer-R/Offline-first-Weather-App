@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.weather.mappers.toCurrentWeatherDB
 import com.example.weatherapp.domain.weather.model.WeatherData
 import com.example.weatherapp.domain.weather.repository.WeatherRepository
+import com.example.weatherapp.utils.Constant
 import com.example.weatherapp.utils.ResultData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collect
@@ -21,14 +22,18 @@ class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
-    private var _weatherData = mutableListOf<WeatherData>()
-    val weatherData: List<WeatherData> get() = _weatherData
+    private var _weatherData = mutableListOf<WeatherData?>()
+    val weatherData: List<WeatherData?> get() = _weatherData
 
     private val _weatherDataLiveData = MutableLiveData<ResultData<Boolean>>()
     val weatherDataLiveData: LiveData<ResultData<Boolean>>
         get() = _weatherDataLiveData
 
     init {
+        val citiesCount = Constant.citiesList.size + 1
+        for (i in 0 until citiesCount) {
+            _weatherData.add(null)
+        }
         viewModelScope.launch {
             weatherRepository.getWeatherDataFromDB().onEach { weatherList ->
                 Log.e("TESTING", "VM - getWeatherDataFromDB: data = $weatherList", )
@@ -41,6 +46,7 @@ class WeatherViewModel @Inject constructor(
                 }
             }.collect()
         }
+        getDataForOtherCities()
     }
 
     fun startObservingDB() = viewModelScope.launch {
@@ -48,13 +54,14 @@ class WeatherViewModel @Inject constructor(
     }
 
     fun fetchWeatherInfo(
-        location: Location,
+        latitude: Double,
+        longitude: Double,
         position: Int
     ) {
         viewModelScope.launch {
             weatherRepository.getCurrentWeatherDataFromRemote(
-                lat = location.latitude,
-                lon = location.longitude
+                lat = latitude,
+                lon = longitude
             ).onEach {
                 Log.e("TESTING", "fetchWeatherInfo: result = $it")
                 when (it) {
@@ -72,5 +79,34 @@ class WeatherViewModel @Inject constructor(
                 }
             }.collect()
         }
+    }
+
+    fun getDataForOtherCities() {
+        Constant.citiesList.forEachIndexed { index, cityName ->
+            fetchCityLocationAndWeatherDetails(
+                cityName = cityName,
+                position = index + 1
+            )
+        }
+    }
+
+    private fun fetchCityLocationAndWeatherDetails(
+        cityName: String,
+        position: Int
+    ) = viewModelScope.launch {
+        weatherRepository.getCoordinatesFromCityName(
+            cityName = cityName
+        ).onEach {
+            when (it) {
+                is ResultData.Success -> {
+                    fetchWeatherInfo(
+                        it.data.latitude,
+                        it.data.longitude,
+                        position
+                    )
+                }
+                else -> {}
+            }
+        }.collect()
     }
 }

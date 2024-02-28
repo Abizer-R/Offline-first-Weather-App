@@ -2,6 +2,8 @@ package com.example.weatherapp.data.weather.mappers
 
 import com.example.weatherapp.data.weather.local.model.CurrentWeatherDB
 import com.example.weatherapp.data.weather.remote.model.CurrentWeatherDto
+import com.example.weatherapp.data.weather.remote.model.GeocoderResponseItem
+import com.example.weatherapp.domain.weather.model.LocationDetails
 import com.example.weatherapp.domain.weather.model.WeatherData
 import java.time.Instant
 import java.time.LocalDateTime
@@ -18,10 +20,12 @@ fun CurrentWeatherDto.toWeatherDataMap() : WeatherData {
         pressure = main.pressure.toDouble(),
         humidity = main.humidity.toDouble(),
         windSpeed = wind.speed,
-        latitude = coord.lat,
-        longitude = coord.lon,
-        name = name,
-        country = sys.country
+        locationDetails = LocationDetails(
+            latitude = coord.lat,
+            longitude = coord.lon,
+            name = name,
+            country = sys.country
+        )
     )
 }
 
@@ -37,10 +41,12 @@ fun CurrentWeatherDB.toWeatherDataMap() : WeatherData {
         pressure = pressure,
         windSpeed = windSpeed,
         humidity = humidity,
-        latitude = latitude,
-        longitude = longitude,
-        name = name,
-        country = country,
+        locationDetails = LocationDetails(
+            latitude = latitude,
+            longitude = longitude,
+            name = name,
+            country = country
+        )
     )
 }
 
@@ -72,10 +78,10 @@ fun WeatherData.toCurrentWeatherDB(
         pressure = pressure,
         windSpeed = windSpeed,
         humidity = humidity,
-        latitude = latitude,
-        longitude = longitude,
-        name = name,
-        country = country
+        latitude = locationDetails.latitude,
+        longitude = locationDetails.longitude,
+        name = locationDetails.name,
+        country = locationDetails.country
     )
     id?.let {
         obj = obj.copy(
@@ -83,4 +89,13 @@ fun WeatherData.toCurrentWeatherDB(
         )
     }
     return obj
+}
+
+fun GeocoderResponseItem.toLocationDetails(): LocationDetails {
+    return LocationDetails(
+        latitude = lat,
+        longitude = lon,
+        name = name,
+        country = country
+    )
 }
