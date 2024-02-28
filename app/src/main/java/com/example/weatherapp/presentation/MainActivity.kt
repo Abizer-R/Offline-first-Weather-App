@@ -115,6 +115,7 @@ class MainActivity : AppCompatActivity() {
             viewBinding.shimmerLayout.hide()
             viewBinding.shimmerLayout.stopShimmer()
             viewBinding.swipeRefreshLayout.isRefreshing = false
+            viewBinding.rvWeatherDetails.show()
         }
     }
 
