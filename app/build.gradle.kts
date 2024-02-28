@@ -85,6 +85,9 @@ dependencies {
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:$room_version")
+
+    // swipe refresh layout
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
 }
 
 // Allow references to generated code

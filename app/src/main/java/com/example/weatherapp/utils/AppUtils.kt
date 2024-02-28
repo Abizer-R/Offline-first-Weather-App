@@ -126,6 +126,13 @@ object AppUtils {
         }
     }
 
+
+    fun getOneDigitDecimal(
+        number: Double
+    ): String {
+        return String.format("%.1f", number)
+    }
+
 //    fun Geocoder.getAddress(
 //        latitude: Double,
 //        longitude: Double,

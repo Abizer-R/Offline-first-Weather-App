@@ -3,8 +3,10 @@ package com.example.weatherapp.data.weather.repository
 import android.util.Log
 import com.example.weatherapp.data.weather.local.dao.WeatherDao
 import com.example.weatherapp.data.weather.local.model.CurrentWeatherDB
+import com.example.weatherapp.data.weather.mappers.toLocationDetails
 import com.example.weatherapp.data.weather.mappers.toWeatherDataMap
 import com.example.weatherapp.data.weather.remote.WeatherApi
+import com.example.weatherapp.domain.weather.model.LocationDetails
 import com.example.weatherapp.domain.weather.model.WeatherData
 import com.example.weatherapp.domain.weather.repository.WeatherRepository
 import com.example.weatherapp.utils.ResultData
@@ -23,7 +25,6 @@ class WeatherRepositoryImpl @Inject constructor(
     override suspend fun getWeatherDataFromDB(): Flow<List<WeatherData>> {
         return flow {
             weatherDao.getCurrentWeatherData().onEach { weatherDbList ->
-                Log.e("TESTING", "REPO - getWeatherDataFromDB: data = $weatherDbList", )
                 val mappedList = weatherDbList.map { weatherDb ->
                     weatherDb.toWeatherDataMap()
                 }
@@ -48,6 +49,30 @@ class WeatherRepositoryImpl @Inject constructor(
             } else {
                 ResultData.Success(
                     currentWeatherData.toWeatherDataMap()
+                )
+            }
+            emit(resultData)
+        }.catch {
+            it.printStackTrace()
+            emit(ResultData.Failed())
+        }
+    }
+
+    override suspend fun getCoordinatesFromCityName(
+        cityName: String
+    ): Flow<ResultData<LocationDetails>> {
+        return flow {
+            emit(ResultData.Loading())
+            val locationDetailsResponse = weatherApi.getCoordinatesFromCityName(
+                cityName = cityName
+            )
+            // api gives response in a list, and we limit the list to 1
+            val locationDetails = locationDetailsResponse?.getOrNull(0)
+            val resultData = if (locationDetails == null) {
+                ResultData.Failed()
+            } else {
+                ResultData.Success(
+                    locationDetails.toLocationDetails()
                 )
             }
             emit(resultData)

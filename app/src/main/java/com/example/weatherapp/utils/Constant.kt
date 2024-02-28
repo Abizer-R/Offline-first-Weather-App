@@ -8,4 +8,13 @@ object Constant {
     // TODO also try to add the apiKey using an interceptor
     const val API_KEY = "6b40419e55e87b4c7eb082eca5f50dab"
 
+    val citiesList = arrayListOf(
+        "New York",
+        "Singapore",
+        "Mumbai",
+        "Delhi",
+        "Sydney",
+        "Melbourne"
+    )
+
 }
