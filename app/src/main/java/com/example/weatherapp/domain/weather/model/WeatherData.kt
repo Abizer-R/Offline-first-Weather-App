@@ -13,6 +13,6 @@ data class WeatherData(
     val latitude: Double,
     val longitude: Double,
     val name: String,
-    val country: String
-//    val weatherType:
+    val country: String,
+    var isLoading: Boolean = false
 )

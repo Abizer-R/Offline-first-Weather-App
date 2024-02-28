@@ -3,16 +3,54 @@ package com.example.weatherapp.utils
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.drawable.Drawable
-import android.location.Geocoder
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.core.content.ContextCompat
 import com.example.weatherapp.R
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Locale
 
-object WeatherDetailsUtil {
+object AppUtils {
+
+    fun isNetworkAvailable(context: Context?): Boolean {
+        if (context == null) return false
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                try {
+                    val capabilities =
+                        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+                    if (capabilities != null) {
+                        when {
+                            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
+                                return true
+                            }
+
+                            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                                return true
+                            }
+
+                            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> {
+                                return true
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    //not handling
+                }
+            }
+
+            else -> {
+                val activeNetworkInfo = connectivityManager.activeNetworkInfo
+                if (activeNetworkInfo != null && activeNetworkInfo.isConnected) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
 
     fun getRelativeDateTimeString(
         dateTime: LocalDateTime,

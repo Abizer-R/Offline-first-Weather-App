@@ -1,4 +1,4 @@
-package com.example.weatherapp.data.weather.model
+package com.example.weatherapp.data.weather.remote.model
 
 data class CurrentWeatherDto(
     val coord: Coord,

@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,7 +17,7 @@ import com.example.weatherapp.databinding.ActivityMainBinding
 import com.example.weatherapp.domain.weather.model.WeatherData
 import com.example.weatherapp.presentation.ui.weather.WeatherViewModel
 import com.example.weatherapp.utils.ResultData
-import com.example.weatherapp.utils.WeatherDetailsUtil
+import com.example.weatherapp.utils.AppUtils
 import com.example.weatherapp.utils.hide
 import com.example.weatherapp.utils.invisible
 import com.example.weatherapp.utils.show
@@ -45,13 +46,16 @@ class MainActivity : AppCompatActivity() {
 
         initUserInterface()
         addObservers()
-        fetchLocationDetails()
+
+        fetchLocationDetailsFromRemote(failToast = false)
+
     }
 
     private fun initUserInterface() {
+        weatherViewModel.startObservingDB()
         with(viewBinding.cvWeatherDetails) {
             btnRefresh.setOnClickListener {
-                fetchLocationDetails()
+                fetchLocationDetailsFromRemote(failToast = true)
             }
         }
     }
@@ -60,12 +64,18 @@ class MainActivity : AppCompatActivity() {
         weatherViewModel.weatherDataLiveData.observe(this) {
             when (it) {
                 is ResultData.Loading -> {
-                    updateRefreshing(isRefreshing = true)
+                    if (weatherViewModel.weatherData.isEmpty()) {
+                        updateRefreshing(isRefreshing = true)
+                    }
                 }
 
                 is ResultData.Success -> {
                     updateRefreshing(isRefreshing = false)
-                    updateWeatherDetails(it.data)
+                    if (weatherViewModel.weatherData.isNotEmpty()) {
+                        updateWeatherDetails(weatherViewModel.weatherData[0])
+                    } else {
+                        fetchLocationDetailsFromRemote(failToast = false, errorLayout = true)
+                    }
                 }
 
                 is ResultData.Failed -> {
@@ -109,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateWeatherDetails(data: WeatherData) {
         with(viewBinding.cvWeatherDetails) {
-            tvUpdatedOn.text = WeatherDetailsUtil.getRelativeDateTimeString(data.time, resources)
+            tvUpdatedOn.text = AppUtils.getRelativeDateTimeString(data.time, resources)
             tvLocation.text = "${data.name}, ${data.country}"
             tvDescription.text = data.desc
             tvTemp.text = getString(
@@ -122,7 +132,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.windspeed_with_symbol, getOneDigitDecimal(data.windSpeed))
 
             val iconDrawable =
-                WeatherDetailsUtil.getWeatherIconDrawable(data.iconCode, this@MainActivity)
+                AppUtils.getWeatherIconDrawable(data.iconCode, this@MainActivity)
                     ?: ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_01d)
             ivWeather.setImageDrawable(iconDrawable)
         }
@@ -134,7 +144,22 @@ class MainActivity : AppCompatActivity() {
         return String.format("%.1f", number)
     }
 
-    private fun fetchLocationDetails() {
+    private fun fetchLocationDetailsFromRemote(
+        failToast: Boolean,
+        errorLayout: Boolean = false
+    ) {
+        if (AppUtils.isNetworkAvailable(this).not()) {
+            if (failToast) {
+                this.toast(getString(R.string.check_internet_connection))
+            }
+            if (errorLayout) {
+                showErrorLayout(
+                    errorText = getString(R.string.check_internet_connection)
+                )
+            }
+            return
+        }
+
         updateRefreshing(isRefreshing = true)
         locationPermissionLauncher.launch(
             arrayOf(
@@ -197,7 +222,7 @@ class MainActivity : AppCompatActivity() {
             // Fetch last location cuz it is faster
             fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
                 location?.let {
-                    weatherViewModel.fetchWeatherInfo(location)
+                    fetchWeatherInfo(it, 0)
                 }
             }
         }
@@ -218,14 +243,17 @@ class MainActivity : AppCompatActivity() {
                 CancellationTokenSource().token
             )?.addOnSuccessListener { location ->
                 location?.let {
-                    weatherViewModel.fetchWeatherInfo(location)
+                    fetchWeatherInfo(it, 0)
                 }
             }?.addOnFailureListener {
                 it.printStackTrace()
                 this@MainActivity.toast(getString(R.string.could_not_fetch_current_location))
             }
         }
+    }
 
+    private fun fetchWeatherInfo(location: Location, position: Int) {
+        weatherViewModel.fetchWeatherInfo(location, position)
     }
 
 

@@ -1,6 +1,6 @@
 package com.example.weatherapp.data.weather.remote
 
-import com.example.weatherapp.data.weather.model.CurrentWeatherDto
+import com.example.weatherapp.data.weather.remote.model.CurrentWeatherDto
 import com.example.weatherapp.utils.Constant
 import retrofit2.http.GET
 import retrofit2.http.Query
